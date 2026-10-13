@@ -1,0 +1,55 @@
+# XcodeGen spec for the thin Tabber.app target. Generate with `xcodegen generate`
+# (scripts/build-app.sh does this). All code lives in the Swift package; App/ only holds main.swift,
+# Info.plist, entitlements and assets.
+name: Tabber
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+packages:
+  TabberPackage:
+    path: .
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  Tabber:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+          - Tabber.entitlements
+    dependencies:
+      - package: TabberPackage
+        product: TabberKit
+    scheme: {}
+    settings:
+      base:
+        PRODUCT_NAME: Tabber
+        PRODUCT_BUNDLE_IDENTIFIER: app.tabber.Tabber
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: App/Tabber.entitlements
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: M5MQ93V9V8
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        DEAD_CODE_STRIPPING: YES
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "Apple Development: Christian Corbell (W4899YS43U)"
+        Release:
+          CODE_SIGN_IDENTITY: "Developer ID Application: Christian Corbell (M5MQ93V9V8)"
+          OTHER_CODE_SIGN_FLAGS: "--timestamp"
