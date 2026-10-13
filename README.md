@@ -16,7 +16,7 @@ It's free and open source (MIT).
 
 ## Status
 
-Version 0.1. Verified live on macOS 27 in TextEdit, Safari, Chrome, an Electron app, Microsoft Word, Notes, Messages, Mail, and the onboarding practice field; see [docs/compatibility.md](docs/compatibility.md) for exactly what was checked in each.
+Version 0.1. Verified live on macOS 27 in TextEdit, Safari, Chrome, Microsoft Word, Notes, Messages, Mail, Discord, Slack (web), Microsoft Teams, and the onboarding practice field; see [docs/compatibility.md](docs/compatibility.md) for exactly what was checked in each.
 
 ## Install
 
