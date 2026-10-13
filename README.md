@@ -71,7 +71,7 @@ scripts/build-app.sh          # builds and signs build/Tabber.app
 swift test                    # unit tests
 ```
 
-`scripts/build-app.sh` signs with the identity configured in `project.yml`; set `TABBER_ADHOC=1` to sign ad hoc instead. `scripts/package-dmg.sh` makes a signed DMG, and `scripts/notarize.sh` produces a notarized, stapled app and DMG using the Apple ID signed into Xcode. `tabber-bench` measures suggestion quality and latency for any GGUF model; `tabber-probe` checks the Accessibility, keyboard, and overlay layers live.
+`scripts/build-app.sh` signs with the identity configured in `project.yml`; set `TABBER_ADHOC=1` to sign ad hoc instead. `scripts/package-dmg.sh` makes a signed DMG, and `scripts/notarize.sh` produces a notarized, stapled app and DMG using a `notarytool` keychain profile (setup is at the top of the script). `tabber-bench` measures suggestion quality and latency for any GGUF model; `tabber-probe` checks the Accessibility, keyboard, and overlay layers live.
 
 ## License
 
