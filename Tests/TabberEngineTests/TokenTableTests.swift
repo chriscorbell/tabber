@@ -71,6 +71,15 @@ struct EngineTests {
         #expect(r.alternatives.allSatisfy { $0.first == " " && !$0.hasPrefix(" the") })
     }
 
+    @Test func closedEngineRefusesRequests() throws {
+        let engine = try LlamaEngine(modelPath: modelPath)
+        engine.close()
+        engine.close()
+        #expect(throws: CompletionError.modelNotLoaded) {
+            try engine.completeSync(CompletionRequest(id: 30, preamble: "", text: "Hello"))
+        }
+    }
+
     @Test func placeholdersAreCut() {
         #expect(LlamaEngine.cuttingPlaceholders(" [Job Title] at [Company") == "")
         #expect(LlamaEngine.cuttingPlaceholders(" the role of [Job Title]") == " the role of")
