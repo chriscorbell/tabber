@@ -139,7 +139,7 @@ public final class ClipboardContextProvider: @unchecked Sendable {
 
 ### TabberApp
 
-`TabberAppMain.run()` starts the app. `AppCoordinator` wires the modules. `SettingsStore` persists `TabberSettings`. `ModelManager` lists, downloads, and selects models. UI: menu bar item, settings window, onboarding.
+`TabberAppMain.run()` starts the app. `AppCoordinator` wires the modules. `SettingsStore` persists `TabberSettings`. `ModelManager` lists, downloads, and selects models. `Updater` wraps Sparkle: it checks the appcast published with each GitHub release, prompts, and installs signed updates. UI: menu bar item, settings window, onboarding.
 
 ## Engine details
 

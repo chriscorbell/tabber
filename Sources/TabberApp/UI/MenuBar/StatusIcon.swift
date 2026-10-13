@@ -1,11 +1,12 @@
 import AppKit
 
-/// Draws the status item image: Tabber's mark, with a thin progress bar while a model downloads.
+/// Draws the status item image: Tabber's mark, with a thin progress bar while a model downloads and a dot
+/// while an update waits.
 @MainActor
 enum StatusIcon {
     static let size = NSSize(width: 18, height: 18)
 
-    static func image(progress: Double?) -> NSImage {
+    static func image(progress: Double?, badge: Bool = false) -> NSImage {
         let mark = LucideIcon.tabberMark
         let image = NSImage(size: size, flipped: true) { rect in
             guard let context = NSGraphicsContext.current?.cgContext else { return false }
@@ -34,6 +35,10 @@ enum StatusIcon {
                 context.setFillColor(NSColor.black.cgColor)
                 context.addPath(CGPath(roundedRect: fill, cornerWidth: 0.75, cornerHeight: 0.75, transform: nil))
                 context.fillPath()
+            }
+            if badge {
+                context.setFillColor(NSColor.black.cgColor)
+                context.fillEllipse(in: CGRect(x: rect.width - 6, y: 0.5, width: 5.5, height: 5.5))
             }
             return true
         }
