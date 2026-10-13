@@ -656,12 +656,35 @@ public final class FieldReader {
             if nextIsNewline, let g = nextCharacter() { return g }
         }
 
-        // e) A guess from the frame.
+        // e) Some web views (Teams) answer every bounds query with an empty rect but still report their text runs'
+        //    frames. With the caret at the end of the text, the last run's trailing edge is the caret.
+        if isWeb, text.selectionLength == 0, text.after.allSatisfy(\.isNewline),
+           let run = lastTextRun(in: element, depth: 0),
+           let rect = CaretMath.caret(atEndOfRun: run.frame, runText: run.text, textBefore: text.before),
+           CaretMath.isPlausible(rect, field: frame) {
+            return CaretGeometry(rect: rect, quality: .derived)
+        }
+
+        // f) A guess from the frame.
         guard let frame else { return nil }
         return CaretGeometry(
             rect: CaretMath.estimatedCaret(field: frame, isSingleLine: isSingleLine, lineHeight: nil),
             quality: .estimated
         )
+    }
+
+    /// The last static text inside the field, searching from the end, at most 3 levels down.
+    private func lastTextRun(in element: AXUIElement, depth: Int) -> (frame: CGRect, text: String)? {
+        for child in AXCast.elements(client.copy(element, AXName.children)).suffix(8).reversed() {
+            let values = copy(child, [AXName.role, AXName.value, AXName.position, AXName.size])
+            if AXCast.string(values[AXName.role]) == AXName.staticText {
+                guard let origin = AXCast.point(values[AXName.position]), let size = AXCast.size(values[AXName.size]),
+                      let value = AXCast.string(values[AXName.value]) else { return nil }
+                return (CGRect(origin: origin, size: size), value)
+            }
+            if depth < 2, let run = lastTextRun(in: child, depth: depth + 1) { return run }
+        }
+        return nil
     }
 
     private func bounds(_ element: AXUIElement, _ range: CFRange) -> CGRect? {
