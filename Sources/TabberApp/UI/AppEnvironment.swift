@@ -20,6 +20,7 @@ struct AppEnvironment {
     let models: ModelManager
     let stats: StatsStore
     let permissions: PermissionsMonitor
+    let updater: Updater
     let actions: AppActions
 }
 
@@ -50,6 +51,7 @@ extension View {
             .environmentObject(environment.settings)
             .environmentObject(environment.models)
             .environmentObject(environment.stats)
+            .environmentObject(environment.updater)
             .environment(\.appActions, environment.actions)
             .environment(\.permissionsMonitor, environment.permissions)
     }

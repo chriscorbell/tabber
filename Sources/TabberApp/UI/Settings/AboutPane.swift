@@ -4,6 +4,8 @@ import SwiftUI
 struct AboutPane: View {
     private static let repository = URL(string: "https://github.com/chriscorbell/tabber")!
 
+    @EnvironmentObject private var updater: Updater
+
     var body: some View {
         Form {
             Section {
@@ -29,8 +31,29 @@ struct AboutPane: View {
                 }
             }
 
+            Section("Updates") {
+                if updater.isAvailable {
+                    Toggle("Check for updates automatically", isOn: $updater.checksAutomatically)
+                    Toggle(isOn: $updater.installsAutomatically) {
+                        Text("Install updates automatically")
+                        Text("New versions download in the background and install the next time Tabber quits.")
+                    }
+                    .disabled(!updater.checksAutomatically)
+                    LabeledContent {
+                        Button("Check Now") { updater.checkForUpdates() }
+                    } label: {
+                        Text("Check for updates")
+                        Text(lastCheck)
+                    }
+                } else {
+                    Text("Development builds don't update themselves.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("Built with") {
                 credit("llama.cpp", "MIT License", "https://github.com/ggml-org/llama.cpp")
+                credit("Sparkle", "MIT License", "https://github.com/sparkle-project/Sparkle")
                 credit("Lucide icons", "ISC License", "https://lucide.dev/license")
             }
 
@@ -41,6 +64,11 @@ struct AboutPane: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var lastCheck: String {
+        guard let date = updater.lastCheck else { return "Not checked yet" }
+        return "Last checked \(date.formatted(.relative(presentation: .named)))"
     }
 
     private var version: String {

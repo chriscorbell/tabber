@@ -40,6 +40,12 @@ swift build -c release --product tabber-bench
 scripts/build-app.sh           # signed Tabber.app in build/
 ```
 
+## Releasing
+
+- Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` in a PR. The updater compares `CURRENT_PROJECT_VERSION`, so it must go up every release.
+- On an up-to-date `main`, run `scripts/release.sh <notes.md>`. It notarizes the app and DMG, signs the appcast with the Sparkle key in the login Keychain, and creates the GitHub release with `Tabber.dmg` and `appcast.xml`. The CI release job then sees the release and skips.
+- The in-app updater reads `releases/latest/download/appcast.xml`. To test updates, build with `TABBER_FEED_URL` pointing at a local feed; Debug builds don't run the updater.
+
 ## Live testing
 
 - Run the built app's binary directly from a terminal (`build/Tabber.app/Contents/MacOS/Tabber`) so it inherits the terminal's Accessibility and Screen Recording grants; a launched-by-Finder copy needs its own grant in System Settings.

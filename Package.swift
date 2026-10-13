@@ -11,6 +11,9 @@ let package = Package(
         .executable(name: "tabber-bench", targets: ["tabber-bench"]),
         .executable(name: "tabber-probe", targets: ["tabber-probe"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
+    ],
     targets: [
         .binaryTarget(
             name: "llama",
@@ -36,10 +39,13 @@ let package = Package(
         // Extra context: on-screen text (OCR) and clipboard.
         .target(name: "TabberContext", dependencies: ["TabberCore"]),
 
-        // The app: coordinator, menu bar, settings, onboarding.
+        // The app: coordinator, menu bar, settings, onboarding, updates.
         .target(
             name: "TabberApp",
-            dependencies: ["TabberCore", "TabberEngine", "TabberAX", "TabberInput", "TabberOverlay", "TabberContext"]
+            dependencies: [
+                "TabberCore", "TabberEngine", "TabberAX", "TabberInput", "TabberOverlay", "TabberContext",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ]
         ),
 
         // Command-line harness for measuring completion quality and latency.

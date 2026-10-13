@@ -25,9 +25,29 @@ xcodebuild -project Tabber.xcodeproj -scheme Tabber -configuration Release -dest
   | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
 [ -d "$ARCHIVE" ] || { echo "Archive failed" >&2; exit 1; }
 
+# Exporting with method developer-id re-signs everything inside the app, including Sparkle's helpers, which the
+# archive leaves signed ad hoc. "upload" also submits the export to Apple's notary service with the Xcode account.
+export_archive() {
+  cat > "$OUT/ExportOptions.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>method</key><string>developer-id</string>
+  <key>destination</key><string>$1</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Developer ID Application</string>
+  <key>teamID</key><string>M5MQ93V9V8</string>
+</dict></plist>
+PLIST
+  xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$OUT/ExportOptions.plist" \
+    -exportPath "$2" -allowProvisioningUpdates 2>&1 | grep -E "error|EXPORT (SUCCEEDED|FAILED)|Uploaded" || true
+}
+
 if [ -n "$PROFILE" ]; then
   echo "==> Notarizing with notarytool profile $PROFILE"
-  APP="$ARCHIVE/Products/Applications/Tabber.app"
+  export_archive export "$OUT/export"
+  APP="$OUT/export/Tabber.app"
+  [ -d "$APP" ] || { echo "Export failed" >&2; exit 1; }
   ZIP="$OUT/Tabber.zip"
   ditto -c -k --keepParent "$APP" "$ZIP"
   xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait
@@ -35,19 +55,7 @@ if [ -n "$PROFILE" ]; then
   mkdir -p "$OUT/notarized" && ditto "$APP" "$OUT/notarized/Tabber.app"
 else
   echo "==> Uploading to Apple's notary service with the Xcode account"
-  cat > "$OUT/ExportOptions.plist" <<'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-  <key>method</key><string>developer-id</string>
-  <key>destination</key><string>upload</string>
-  <key>signingStyle</key><string>manual</string>
-  <key>signingCertificate</key><string>Developer ID Application</string>
-  <key>teamID</key><string>M5MQ93V9V8</string>
-</dict></plist>
-PLIST
-  xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$OUT/ExportOptions.plist" \
-    -exportPath "$OUT/upload" -allowProvisioningUpdates 2>&1 | grep -E "error|EXPORT (SUCCEEDED|FAILED)|Uploaded" || true
+  export_archive upload "$OUT/upload"
 
   echo "==> Waiting for Apple (usually a minute or two)"
   for _ in $(seq 1 60); do

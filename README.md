@@ -24,6 +24,8 @@ Version 0.1. Verified live on macOS 27 in TextEdit, Safari, Chrome, Microsoft Wo
 2. Open it. Onboarding asks for Accessibility (to read the focused field and insert text), downloads a model (1–3.5 GB, picked for your Mac), and lets you try it.
 3. Optional: allow Screen Recording for screen context.
 
+Tabber keeps itself up to date: it checks for a new version once a day and asks before installing it. Settings → About has the options.
+
 Requires an Apple Silicon Mac with macOS 14 or later. 16 GB of memory is recommended for the default model.
 
 ## Shortcuts
@@ -55,7 +57,7 @@ You can also drop any GGUF into `~/Library/Application Support/Tabber/Models`. M
 
 ## Privacy
 
-- Inference, text recognition, and personalization all run locally. Tabber makes no network requests except downloading the model you pick from Hugging Face.
+- Inference, text recognition, and personalization all run locally. Tabber makes no network requests except downloading the model you pick from Hugging Face and checking GitHub for updates once a day (turn that off in Settings → About).
 - It never reads password fields, and it masks things that look like secrets (keys, tokens, card numbers) before they reach the model.
 - "Learn my writing" is off by default. When on, it keeps an encrypted history on this Mac (key in your Keychain) and uses it to favour your words and phrasing. Delete it any time in Settings.
 
@@ -71,7 +73,7 @@ scripts/build-app.sh          # builds and signs build/Tabber.app
 swift test                    # unit tests
 ```
 
-`scripts/build-app.sh` signs with the identity configured in `project.yml`; set `TABBER_ADHOC=1` to sign ad hoc instead. `scripts/package-dmg.sh` makes a signed DMG, and `scripts/notarize.sh` produces a notarized, stapled app and DMG using a `notarytool` keychain profile (setup is at the top of the script). `tabber-bench` measures suggestion quality and latency for any GGUF model; `tabber-probe` checks the Accessibility, keyboard, and overlay layers live.
+`scripts/build-app.sh` signs with the identity configured in `project.yml`; set `TABBER_ADHOC=1` to sign ad hoc instead. `scripts/package-dmg.sh` makes a signed DMG, and `scripts/notarize.sh` produces a notarized, stapled app and DMG using a `notarytool` keychain profile (setup is at the top of the script), and `scripts/release.sh` publishes a release and the feed the in-app updater reads. `tabber-bench` measures suggestion quality and latency for any GGUF model; `tabber-probe` checks the Accessibility, keyboard, and overlay layers live.
 
 ## License
 
