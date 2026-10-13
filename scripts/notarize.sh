@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Builds, notarizes and staples Tabber.app, then packages a signed DMG around the notarized app.
+# Builds, notarizes and staples Tabber.app, then packages a signed DMG around it and notarizes that too.
 #
-# Uses the Apple ID signed into Xcode (Settings > Accounts), so no extra credentials are needed:
-# archive -> export with destination "upload" (submits to Apple's notary service) -> wait -> export the
-# notarized, stapled app. If you'd rather use notarytool, store a profile once and set TABBER_NOTARY_PROFILE:
-#   xcrun notarytool store-credentials tabber-notary --apple-id <id> --team-id M5MQ93V9V8 --password <app password>
+# Uses the notarytool profile in TABBER_NOTARY_PROFILE (default tabber-notary). Store it once; it asks for an
+# app-specific password from account.apple.com:
+#   xcrun notarytool store-credentials tabber-notary --apple-id <id> --team-id M5MQ93V9V8
+# Without a profile it falls back to the Apple ID signed into Xcode (Settings > Accounts), which can notarize
+# the app but not the DMG, so the DMG then fails Gatekeeper's distribution check.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -12,6 +13,9 @@ OUT="build/notary"
 ARCHIVE="$OUT/Tabber.xcarchive"
 rm -rf "$OUT"
 mkdir -p "$OUT"
+
+PROFILE="${TABBER_NOTARY_PROFILE:-tabber-notary}"
+xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1 || PROFILE=""
 
 command -v xcodegen >/dev/null && xcodegen generate --quiet
 
@@ -21,12 +25,12 @@ xcodebuild -project Tabber.xcodeproj -scheme Tabber -configuration Release -dest
   | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
 [ -d "$ARCHIVE" ] || { echo "Archive failed" >&2; exit 1; }
 
-if [ -n "${TABBER_NOTARY_PROFILE:-}" ]; then
-  echo "==> Notarizing with notarytool profile $TABBER_NOTARY_PROFILE"
+if [ -n "$PROFILE" ]; then
+  echo "==> Notarizing with notarytool profile $PROFILE"
   APP="$ARCHIVE/Products/Applications/Tabber.app"
   ZIP="$OUT/Tabber.zip"
   ditto -c -k --keepParent "$APP" "$ZIP"
-  xcrun notarytool submit "$ZIP" --keychain-profile "$TABBER_NOTARY_PROFILE" --wait
+  xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait
   xcrun stapler staple "$APP"
   mkdir -p "$OUT/notarized" && ditto "$APP" "$OUT/notarized/Tabber.app"
 else
@@ -62,3 +66,12 @@ echo "==> Packaging"
 rm -rf build/Tabber.app
 ditto "$OUT/notarized/Tabber.app" build/Tabber.app
 scripts/package-dmg.sh
+
+if [ -n "$PROFILE" ]; then
+  echo "==> Notarizing the DMG"
+  xcrun notarytool submit build/Tabber.dmg --keychain-profile "$PROFILE" --wait
+  xcrun stapler staple build/Tabber.dmg
+  syspolicy_check distribution build/Tabber.dmg
+else
+  echo "Warning: no notarytool profile, so build/Tabber.dmg is not notarized. See the top of this script." >&2
+fi
