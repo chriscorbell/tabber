@@ -67,7 +67,10 @@ public final class LlamaEngine: CompletionEngine, @unchecked Sendable {
     let vocab: OpaquePointer
     let table: TokenTable
     private let queue = DispatchQueue(label: "tabber.engine", qos: .userInteractive)
+    private static let onQueue = DispatchSpecificKey<Void>()
     private let log = Logger(subsystem: "app.tabber", category: "engine")
+    /// Set by `close()` once the model and context are freed. Only touched on `queue`.
+    private var closed = false
 
     /// Tokens currently held in the context for sequence 0, in position order.
     var cached: [llama_token] = []
@@ -145,14 +148,47 @@ public final class LlamaEngine: CompletionEngine, @unchecked Sendable {
             isRecurrentOrHybrid: llama_model_is_recurrent(model) || llama_model_is_hybrid(model),
             slidingWindow: Int(llama_model_n_swa(model))
         )
+        queue.setSpecific(key: Self.onQueue, value: ())
+        Self.open.withLock { $0[ObjectIdentifier(self)] = WeakEngine(engine: self) }
+        _ = Self.closeAtExit
     }
 
     deinit {
+        Self.open.withLock { $0[ObjectIdentifier(self)] = nil }
+        freeModel()
         logitScratch.deallocate()
+    }
+
+    /// Frees the model and context now, after any work in flight stops. Later requests throw `modelNotLoaded`.
+    public func close() {
+        cancel()
+        if DispatchQueue.getSpecific(key: Self.onQueue) != nil {
+            freeModel()
+        } else {
+            queue.sync { freeModel() }
+        }
+    }
+
+    private func freeModel() {
+        guard !closed else { return }
+        closed = true
         llama_batch_free(batch)
         llama_free(ctx)
         llama_model_free(model)
     }
+
+    // MARK: - Process exit
+
+    private struct WeakEngine: @unchecked Sendable { weak var engine: LlamaEngine? }
+    private static let open = OSAllocatedUnfairLock(initialState: [ObjectIdentifier: WeakEngine]())
+
+    /// llama.cpp's Metal backend aborts during exit if a model is still loaded, so every open engine is closed
+    /// first. Registered after the first model loads, so it runs before the backend's own exit-time cleanup.
+    private static let closeAtExit: Void = {
+        atexit {
+            for engine in LlamaEngine.open.withLock({ $0.values.compactMap(\.engine) }) { engine.close() }
+        }
+    }()
 
     // MARK: - CompletionEngine
 
@@ -178,6 +214,7 @@ public final class LlamaEngine: CompletionEngine, @unchecked Sendable {
         let ticket = ticketLock.withLock { $0 }
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
             queue.async {
+                guard !self.closed else { return cont.resume() }
                 let plan = self.plan(preamble: preamble, text: text)
                 _ = try? self.evaluate(prompt: plan.tokens, ticket: ticket)
                 cont.resume()
@@ -347,6 +384,7 @@ public final class LlamaEngine: CompletionEngine, @unchecked Sendable {
     // MARK: - Generation
 
     private func run(_ request: CompletionRequest, ticket: UInt64, onPartial: (@Sendable (String) -> Void)?) throws -> CompletionResult {
+        guard !closed else { throw CompletionError.modelNotLoaded }
         let start = DispatchTime.now()
         let plan = plan(preamble: request.preamble, text: request.text)
         guard !plan.tokens.isEmpty else { return CompletionResult(requestID: request.id, text: "", stopReason: .endOfText) }
