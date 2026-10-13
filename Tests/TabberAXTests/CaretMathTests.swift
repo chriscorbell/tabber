@@ -162,3 +162,32 @@ private let field = CGRect(x: 100, y: 200, width: 400, height: 300)
         #expect(!CaretMath.looksSingleLine(fieldHeight: 38, caretHeight: 0))
     }
 }
+
+/// Teams: every bounds query is empty, only text-run frames are real.
+@Suite struct TextRunCaretTests {
+    let run = CGRect(x: 1678, y: 677, width: 212, height: 15)
+
+    @Test func caretAtTheEndOfASingleLineRun() {
+        let caret = CaretMath.caret(atEndOfRun: run, runText: "can we move our meeting to", textBefore: "Hi Sam, can we move our meeting to")
+        #expect(caret == CGRect(x: 1890, y: 677, width: 0, height: 15))
+    }
+
+    @Test func ignoresARunTheCaretIsNotAfter() {
+        #expect(CaretMath.caret(atEndOfRun: run, runText: "meeting", textBefore: "meeting to") == nil)
+    }
+
+    @Test func ignoresAWrappedRun() {
+        let wrapped = CGRect(x: 1678, y: 623, width: 774, height: 33)
+        #expect(CaretMath.caret(atEndOfRun: wrapped, runText: "to", textBefore: "to") == nil)
+    }
+
+    @Test func toleratesATrailingNewline() {
+        #expect(CaretMath.caret(atEndOfRun: run, runText: "meeting to\n", textBefore: "meeting to") != nil)
+    }
+
+    @Test func ignoresEmptyAndRightToLeftRuns() {
+        #expect(CaretMath.caret(atEndOfRun: run, runText: "", textBefore: "to") == nil)
+        #expect(CaretMath.caret(atEndOfRun: .zero, runText: "to", textBefore: "to") == nil)
+        #expect(CaretMath.caret(atEndOfRun: run, runText: "שלום", textBefore: "שלום") == nil)
+    }
+}

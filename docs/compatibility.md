@@ -9,7 +9,10 @@ What has been checked live on macOS 27 (M5 Pro) with the Release build. "Ghost" 
 | Safari | contenteditable | – | – | field read and insertion verified by the module tests | – | |
 | Chrome | textarea | yes | Georgia, inferred from word positions (Chrome reports size only) | yes | yes | needs Chrome's accessibility tree, which Tabber turns on |
 | Chrome | contenteditable | – | – | field read and insertion verified by the module tests | – | |
-| Electron (test app) | contenteditable composer | yes | system font | yes | yes ("release on Friday.") | stands in for Slack, Discord, Notion, Teams, which need logins |
+| Electron (test app) | contenteditable composer | yes | system font | yes | yes ("release on Friday.") | |
+| Discord | message box | yes | – | yes / yes | – | Debug build |
+| Slack (web, in Helium) | message box | yes | – | yes / yes | – | Debug build |
+| Microsoft Teams | message box | yes, while the message fits on one line | – | yes / yes | – | Teams answers every character-bounds query with an empty rect, so the caret comes from the frame of the last text run. Wrapped messages use the mirror card. Debug build |
 | Microsoft Word | document | yes | Aptos (Body) | yes | – | led to the placeholder filter ("[Job Title]" is now cut) |
 | Notes | note body (iCloud) | yes | host font | yes | – | |
 | Messages | new message | yes | – | yes | – | Tabber also suggested in the "To:" field; recipient and search fields are now excluded |
@@ -22,4 +25,4 @@ Off by default: terminals, code editors (Xcode, VS Code, Cursor, Zed, JetBrains)
 Known gaps:
 - Apps that draw text themselves without exposing it to Accessibility (Google Docs without screen-reader mode, Figma, games, remote desktops) can't get suggestions.
 - Mail's compose body doesn't report its text to Accessibility for read-back, so Tab acceptance there was confirmed on screen only.
-- Untested here: Slack, Discord and Teams with real accounts (the Electron test app covers their text fields), Pages, Firefox (expected to need the mirror card).
+- Untested here: the Slack desktop app, Notion, Pages, Firefox (expected to need the mirror card).

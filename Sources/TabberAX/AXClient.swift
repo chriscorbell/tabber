@@ -55,6 +55,7 @@ enum AXName {
     static let searchField = "AXSearchField"
     static let secureTextField = "AXSecureTextField"
     static let webArea = "AXWebArea"
+    static let staticText = "AXStaticText"
     static let group = "AXGroup"
     static let scrollArea = "AXScrollArea"
     static let windowRole = "AXWindow"

@@ -77,6 +77,18 @@ enum CaretMath {
         return (caret, false)
     }
 
+    /// Taller than one line of chat-sized text, shorter than two.
+    static let singleLineRunHeight: CGFloat = 26
+
+    /// The caret at the trailing edge of a text run's frame, when the text before the caret ends with the run and
+    /// the run is one line. A wrapped run's frame spans its widest line, so its edge isn't the caret.
+    static func caret(atEndOfRun run: CGRect, runText: String, textBefore: String) -> CGRect? {
+        let runText = runText.hasSuffix("\n") ? String(runText.dropLast()) : runText
+        guard !runText.isEmpty, textBefore.hasSuffix(runText), !textBeforeIsRightToLeft(runText),
+              run.width > 0, run.height >= 8, run.height < singleLineRunHeight else { return nil }
+        return CGRect(x: run.maxX, y: run.minY, width: 0, height: run.height)
+    }
+
     /// A guess from the field frame alone: the first line, just inside the leading edge.
     static func estimatedCaret(field: CGRect, isSingleLine: Bool, lineHeight: CGFloat?) -> CGRect {
         let inset: CGFloat = 4
