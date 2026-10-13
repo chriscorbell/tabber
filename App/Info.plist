@@ -38,5 +38,11 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>$(TABBER_FEED_URL)</string>
+	<key>SUPublicEDKey</key>
+	<string>Mm5oPplJzj0P064l2ZARex5h3VsBAVDiku+dAcQoxV8=</string>
 </dict>
 </plist>

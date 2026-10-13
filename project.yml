@@ -39,6 +39,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: App/Tabber.entitlements
         MARKETING_VERSION: 0.2.0
         CURRENT_PROJECT_VERSION: 2
+        # The in-app updater's feed, published by scripts/release.sh. Override it to test updates locally.
+        TABBER_FEED_URL: https://github.com/chriscorbell/tabber/releases/latest/download/appcast.xml
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         COMBINE_HIDPI_IMAGES: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"

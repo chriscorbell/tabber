@@ -34,9 +34,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             .sink { [weak self] visible in self?.item.isVisible = visible }
             .store(in: &subscriptions)
 
-        Publishers.CombineLatest3(env.settings.$settings.map(\.enabled).removeDuplicates(), env.state.$pausedUntil, env.models.$downloads)
+        Publishers.CombineLatest4(
+            env.settings.$settings.map(\.enabled).removeDuplicates(), env.state.$pausedUntil, env.models.$downloads,
+            env.updater.$pendingVersion
+        )
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, pausedUntil, _ in
+            .sink { [weak self] _, pausedUntil, _, _ in
                 self?.schedulePauseRefresh(pausedUntil)
                 self?.updateIcon()
             }
@@ -53,7 +56,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private func updateIcon() {
         guard let button = item.button else { return }
         let progress = env.models.downloads.values.max()
-        button.image = StatusIcon.image(progress: progress)
+        button.image = StatusIcon.image(progress: progress, badge: env.updater.pendingVersion != nil)
         button.appearsDisabled = !env.settings.settings.enabled || env.state.isPaused()
         button.toolTip = statusLine
     }
@@ -78,6 +81,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         let state = env.state
 
         menu.addItem(.sectionHeader(title: statusLine))
+        if let version = env.updater.pendingVersion {
+            let update = action("Update to Tabber \(version)…") { [updater = env.updater] in updater.checkForUpdates() }
+            update.image = LucideIcon.download.image(size: 14)
+            menu.addItem(update)
+        }
         if settings.settings.enabled, let until = state.pausedUntil, until > Date() {
             menu.addItem(info("Paused until \(until.formatted(date: .omitted, time: .shortened))"))
         }
@@ -130,6 +138,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(action("Settings…", key: ",") { actions.showSettings(nil) })
         menu.addItem(action("Show Onboarding…") { actions.showOnboarding() })
         menu.addItem(action("About Tabber") { actions.showSettings(.about) })
+        if env.updater.isAvailable {
+            menu.addItem(action("Check for Updates…") { [updater = env.updater] in updater.checkForUpdates() })
+        }
         menu.addItem(.separator())
         menu.addItem(action("Quit Tabber", key: "q") { actions.quit() })
     }

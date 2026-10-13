@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let stats = StatsStore()
     private lazy var models = ModelManager(settings: settings)
     private lazy var permissions = PermissionsMonitor(state: state)
+    private let updater = Updater()
     private let actions = AppActions()
 
     private var menuBar: MenuBarController?
@@ -15,7 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var coordinator: AppCoordinator?
 
     private var environment: AppEnvironment {
-        AppEnvironment(state: state, settings: settings, models: models, stats: stats, permissions: permissions, actions: actions)
+        AppEnvironment(state: state, settings: settings, models: models, stats: stats, permissions: permissions, updater: updater, actions: actions)
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -81,6 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showAboutPane(_ sender: Any?) {
         showSettings(.about)
+    }
+
+    @objc func checkForUpdates(_ sender: Any?) {
+        updater.checkForUpdates()
     }
 
     private func showSettings(_ pane: SettingsPane?) {

@@ -9,6 +9,7 @@ enum MainMenu {
 
         let app = NSMenu(title: "Tabber")
         app.addItem(withTitle: "About Tabber", action: #selector(AppDelegate.showAboutPane(_:)), keyEquivalent: "")
+        app.addItem(withTitle: "Check for Updates…", action: #selector(AppDelegate.checkForUpdates(_:)), keyEquivalent: "")
         app.addItem(.separator())
         app.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettingsWindow(_:)), keyEquivalent: ",")
         app.addItem(.separator())
